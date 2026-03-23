@@ -69,6 +69,68 @@ Where on the deck my Captain lies,`,
     bgScene: CURATED_POEMS.find((p) => p.id === "whitman")!.lines[0].scene,
     bgCustom: "captain",
   },
+  {
+    id: "weight",
+    label: "Weight",
+    author: "Indovina",
+    text: `Today I am weight. Today my tail quivers with the herd's, a burly
+pack of cattails swirling. I am big-bellied, furry, untamable. I am
+full of grass. Today I get to think about my next meal. Today I
+daydream about the rut, strutting and curling my lip, grunting with
+my tongue outstretched. Today I want to wallow in the mud with
+all the other lip-curlers, licking pheromonal heat. Shuffle of
+salivating verve. Scruff of soul. Today I hoist my bulging bulk. My
+nose twitches with distant splays of sweat. Ears infused in
+chemical cues. I am nature, never devil. Today I give my love
+away.`,
+    bgScene: CURATED_POEMS.find((p) => p.id === "weight")!.lines[0].scene,
+  },
+  {
+    id: "fish",
+    label: "Warm for a fish",
+    author: "Kimball",
+    text: `Warm for a fish,
+The kingqueen of egglayers,
+Innards sluicing round deckheight
+Stain the waders of a bearded fisherman.
+He slices clean the belly
+With a curved tip razorknife gently,
+Calls her gorgeous, kisses
+Her whiskers whispers creekside
+admiral admiral admiral admiral.
+She expects that every man
+Will do his slicing right.`,
+    bgScene: CURATED_POEMS.find((p) => p.id === "fish")!.lines[0].scene,
+  },
+  {
+    id: "haiku",
+    label: "Day Forty-Two",
+    author: "Wayland",
+    text: `A winter windstorm
+blows down the power lines. We
+eat by candlelight.`,
+    bgScene: CURATED_POEMS.find((p) => p.id === "haiku")!.lines[0].scene,
+  },
+  {
+    id: "alti",
+    label: "Have You Not Learned",
+    author: "Alti",
+    text: `Soul or flare, or then a reckoning. Spare pasts
+from gashes prior. Polyps of personage,
+like tight-packed parcels, plucked apart until
+raw as small carcass ready for forks.
+In a butter time—pre-present, future eventual—
+a pickaxe couldn't puncture them,
+warlords would run away. Partial coordinates
+given to an inescapable whorl
+of vortices. Where portals pulse like swollen
+spores. Starlight a soft no
+among firm certainties. Spent parts compose.
+Bereft reports galore.
+A prion named Osiris. Three halves of actual
+mysterious. Glee`,
+    bgScene: CURATED_POEMS.find((p) => p.id === "alti")!.lines[0].scene,
+  },
 ];
 
 type View = "input" | "visualize";
