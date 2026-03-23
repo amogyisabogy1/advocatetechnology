@@ -7,8 +7,6 @@
  */
 
 export interface ComposeSceneRequest {
-  /** The current poetry line to visualize */
   line: string;
-  /** Previous lines for context */
   context?: string[];
 }

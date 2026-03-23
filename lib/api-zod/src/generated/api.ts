@@ -8,7 +8,6 @@
 import * as zod from "zod";
 
 /**
- * Returns server health status
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({
@@ -16,22 +15,39 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
- * Uses Claude to analyze a poetry line and return scene parameters
  * @summary Compose a 3D scene from a poetry line
  */
 export const ComposeSceneBody = zod.object({
-  line: zod.string().describe("The current poetry line to visualize"),
-  context: zod
-    .array(zod.string())
-    .optional()
-    .describe("Previous lines for context"),
+  line: zod.string(),
+  context: zod.array(zod.string()).optional(),
 });
+
+export const composeSceneResponseFogDensityMin = 0.001;
+export const composeSceneResponseFogDensityMax = 0.08;
+
+export const composeSceneResponseLightIntensityMin = 0;
+export const composeSceneResponseLightIntensityMax = 4;
+
+export const composeSceneResponseTurbulenceMin = 0;
+export const composeSceneResponseTurbulenceMax = 1;
+
+export const composeSceneResponseTimeOfDayMin = 0;
+export const composeSceneResponseTimeOfDayMax = 1;
 
 export const composeSceneResponseTerrainMin = 0;
 export const composeSceneResponseTerrainMax = 1;
 
+export const composeSceneResponseTerrainHeightMin = 0.5;
+export const composeSceneResponseTerrainHeightMax = 12;
+
+export const composeSceneResponseTerrainScaleMin = 0.3;
+export const composeSceneResponseTerrainScaleMax = 5;
+
 export const composeSceneResponseWaterMin = 0;
 export const composeSceneResponseWaterMax = 1;
+
+export const composeSceneResponseWaterOpacityMin = 0.1;
+export const composeSceneResponseWaterOpacityMax = 1;
 
 export const composeSceneResponseTreesMin = 0;
 export const composeSceneResponseTreesMax = 1;
@@ -45,35 +61,97 @@ export const composeSceneResponseColumnsMax = 1;
 export const composeSceneResponseFireMin = 0;
 export const composeSceneResponseFireMax = 1;
 
+export const composeSceneResponseParticlesMin = 0;
+export const composeSceneResponseParticlesMax = 1;
+
+export const composeSceneResponseParticleSizeMin = 0.01;
+export const composeSceneResponseParticleSizeMax = 0.8;
+
+export const composeSceneResponseParticleCountMin = 100;
+export const composeSceneResponseParticleCountMax = 8000;
+
+export const composeSceneResponseParticleSpreadMin = 5;
+export const composeSceneResponseParticleSpreadMax = 60;
+
 export const composeSceneResponseSpheresMin = 0;
 export const composeSceneResponseSpheresMax = 1;
 
 export const composeSceneResponseStarsMin = 0;
 export const composeSceneResponseStarsMax = 1;
 
-export const composeSceneResponseTurbulenceMin = 0;
-export const composeSceneResponseTurbulenceMax = 1;
-
-export const composeSceneResponseTimeOfDayMin = 0;
-export const composeSceneResponseTimeOfDayMax = 1;
+export const composeSceneResponseRingsMin = 0;
+export const composeSceneResponseRingsMax = 1;
 
 export const ComposeSceneResponse = zod.object({
+  sceneType: zod
+    .enum([
+      "void",
+      "ocean",
+      "forest",
+      "mountain",
+      "city",
+      "ruins",
+      "fire",
+      "cosmos",
+      "desert",
+      "field",
+      "cave",
+      "storm",
+    ])
+    .describe(
+      "Dominant world archetype — pick whichever best matches the line's imagery",
+    ),
+  skyColor: zod.string().describe("Hex color for sky\/background"),
+  fogColor: zod.string(),
+  fogDensity: zod
+    .number()
+    .min(composeSceneResponseFogDensityMin)
+    .max(composeSceneResponseFogDensityMax),
+  groundColor: zod.string().describe("Hex color for ground\/terrain surface"),
+  ambientColor: zod.string().describe("Hex color for ambient fill light"),
+  lightColor: zod.string().describe("Hex color for main directional light"),
+  lightIntensity: zod
+    .number()
+    .min(composeSceneResponseLightIntensityMin)
+    .max(composeSceneResponseLightIntensityMax),
+  turbulence: zod
+    .number()
+    .min(composeSceneResponseTurbulenceMin)
+    .max(composeSceneResponseTurbulenceMax)
+    .describe("0=serene\/still, 1=violent chaos"),
+  timeOfDay: zod
+    .number()
+    .min(composeSceneResponseTimeOfDayMin)
+    .max(composeSceneResponseTimeOfDayMax)
+    .describe("0=midnight, 0.25=dawn, 0.5=noon, 0.75=dusk, 1=midnight"),
   terrain: zod
     .number()
     .min(composeSceneResponseTerrainMin)
-    .max(composeSceneResponseTerrainMax),
-  terrainHeight: zod.number().optional(),
-  terrainScale: zod.number().optional(),
+    .max(composeSceneResponseTerrainMax)
+    .describe("Presence of terrain\/hills (0=flat, 1=dramatic)"),
+  terrainHeight: zod
+    .number()
+    .min(composeSceneResponseTerrainHeightMin)
+    .max(composeSceneResponseTerrainHeightMax),
+  terrainScale: zod
+    .number()
+    .min(composeSceneResponseTerrainScaleMin)
+    .max(composeSceneResponseTerrainScaleMax),
   water: zod
     .number()
     .min(composeSceneResponseWaterMin)
     .max(composeSceneResponseWaterMax),
-  waterAmplitude: zod.number().optional(),
-  waterFrequency: zod.number().optional(),
+  waterColor: zod.string(),
+  waterOpacity: zod
+    .number()
+    .min(composeSceneResponseWaterOpacityMin)
+    .max(composeSceneResponseWaterOpacityMax),
   trees: zod
     .number()
     .min(composeSceneResponseTreesMin)
-    .max(composeSceneResponseTreesMax),
+    .max(composeSceneResponseTreesMax)
+    .describe("Forest density"),
+  treeColor: zod.string(),
   buildings: zod
     .number()
     .min(composeSceneResponseBuildingsMin)
@@ -82,37 +160,65 @@ export const ComposeSceneResponse = zod.object({
     .number()
     .min(composeSceneResponseColumnsMin)
     .max(composeSceneResponseColumnsMax)
-    .optional(),
-  columnHeight: zod.number().optional(),
-  columnRadius: zod.number().optional(),
+    .describe("Ancient ruin columns"),
   fire: zod
     .number()
     .min(composeSceneResponseFireMin)
     .max(composeSceneResponseFireMax),
-  fireRadius: zod.number().optional(),
-  fireHeight: zod.number().optional(),
+  particles: zod
+    .number()
+    .min(composeSceneResponseParticlesMin)
+    .max(composeSceneResponseParticlesMax)
+    .describe(
+      "Particle effect density — use liberally for dust, rain, snow, embers, sparks, petals, mist",
+    ),
+  particleColor: zod.string(),
+  particleSize: zod
+    .number()
+    .min(composeSceneResponseParticleSizeMin)
+    .max(composeSceneResponseParticleSizeMax)
+    .describe(
+      "0.01=fine dust\/mist, 0.05=small dots, 0.2=noticeable flakes, 0.8=large orbs",
+    ),
+  particleCount: zod
+    .number()
+    .min(composeSceneResponseParticleCountMin)
+    .max(composeSceneResponseParticleCountMax),
+  particleMotion: zod.enum([
+    "still",
+    "float",
+    "rain",
+    "rise",
+    "spiral",
+    "orbit",
+    "scatter",
+    "drift",
+    "pulse",
+  ]),
+  particleSpread: zod
+    .number()
+    .min(composeSceneResponseParticleSpreadMin)
+    .max(composeSceneResponseParticleSpreadMax)
+    .describe("How widely particles are spread in the scene"),
   spheres: zod
     .number()
     .min(composeSceneResponseSpheresMin)
-    .max(composeSceneResponseSpheresMax),
-  sphereRadius: zod.number().optional(),
-  sphereY: zod.number().optional(),
+    .max(composeSceneResponseSpheresMax)
+    .describe("Glowing orbs\/celestial bodies"),
+  sphereColor: zod.string(),
   stars: zod
     .number()
     .min(composeSceneResponseStarsMin)
     .max(composeSceneResponseStarsMax),
-  turbulence: zod
+  rings: zod
     .number()
-    .min(composeSceneResponseTurbulenceMin)
-    .max(composeSceneResponseTurbulenceMax),
-  col1: zod.string(),
-  col2: zod.string(),
-  col3: zod.string(),
-  skyColor: zod.string(),
-  fogColor: zod.string(),
-  fogDensity: zod.number(),
-  timeOfDay: zod
-    .number()
-    .min(composeSceneResponseTimeOfDayMin)
-    .max(composeSceneResponseTimeOfDayMax),
+    .min(composeSceneResponseRingsMin)
+    .max(composeSceneResponseRingsMax)
+    .describe("Geometric ring shapes floating in scene"),
+  ringColor: zod.string(),
+  cameraAngle: zod
+    .enum(["horizon", "high", "low", "closeup", "wide"])
+    .describe(
+      "Viewing angle — low=dramatic upward, high=bird's eye, horizon=eye level, closeup=intimate, wide=expansive",
+    ),
 });

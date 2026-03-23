@@ -14,77 +14,188 @@ export interface ErrorResponse {
 }
 
 export interface ComposeSceneRequest {
-  /** The current poetry line to visualize */
   line: string;
-  /** Previous lines for context */
   context?: string[];
 }
 
+/**
+ * Dominant world archetype — pick whichever best matches the line's imagery
+ */
+export type SceneParamsSceneType =
+  (typeof SceneParamsSceneType)[keyof typeof SceneParamsSceneType];
+
+export const SceneParamsSceneType = {
+  void: "void",
+  ocean: "ocean",
+  forest: "forest",
+  mountain: "mountain",
+  city: "city",
+  ruins: "ruins",
+  fire: "fire",
+  cosmos: "cosmos",
+  desert: "desert",
+  field: "field",
+  cave: "cave",
+  storm: "storm",
+} as const;
+
+export type SceneParamsParticleMotion =
+  (typeof SceneParamsParticleMotion)[keyof typeof SceneParamsParticleMotion];
+
+export const SceneParamsParticleMotion = {
+  still: "still",
+  float: "float",
+  rain: "rain",
+  rise: "rise",
+  spiral: "spiral",
+  orbit: "orbit",
+  scatter: "scatter",
+  drift: "drift",
+  pulse: "pulse",
+} as const;
+
+/**
+ * Viewing angle — low=dramatic upward, high=bird's eye, horizon=eye level, closeup=intimate, wide=expansive
+ */
+export type SceneParamsCameraAngle =
+  (typeof SceneParamsCameraAngle)[keyof typeof SceneParamsCameraAngle];
+
+export const SceneParamsCameraAngle = {
+  horizon: "horizon",
+  high: "high",
+  low: "low",
+  closeup: "closeup",
+  wide: "wide",
+} as const;
+
 export interface SceneParams {
+  /** Dominant world archetype — pick whichever best matches the line's imagery */
+  sceneType: SceneParamsSceneType;
+  /** Hex color for sky/background */
+  skyColor: string;
+  fogColor: string;
   /**
+   * @minimum 0.001
+   * @maximum 0.08
+   */
+  fogDensity: number;
+  /** Hex color for ground/terrain surface */
+  groundColor: string;
+  /** Hex color for ambient fill light */
+  ambientColor: string;
+  /** Hex color for main directional light */
+  lightColor: string;
+  /**
+   * @minimum 0
+   * @maximum 4
+   */
+  lightIntensity: number;
+  /**
+   * 0=serene/still, 1=violent chaos
+   * @minimum 0
+   * @maximum 1
+   */
+  turbulence: number;
+  /**
+   * 0=midnight, 0.25=dawn, 0.5=noon, 0.75=dusk, 1=midnight
+   * @minimum 0
+   * @maximum 1
+   */
+  timeOfDay: number;
+  /**
+   * Presence of terrain/hills (0=flat, 1=dramatic)
    * @minimum 0
    * @maximum 1
    */
   terrain: number;
-  terrainHeight?: number;
-  terrainScale?: number;
+  /**
+   * @minimum 0.5
+   * @maximum 12
+   */
+  terrainHeight: number;
+  /**
+   * @minimum 0.3
+   * @maximum 5
+   */
+  terrainScale: number;
   /**
    * @minimum 0
    * @maximum 1
    */
   water: number;
-  waterAmplitude?: number;
-  waterFrequency?: number;
+  waterColor: string;
   /**
+   * @minimum 0.1
+   * @maximum 1
+   */
+  waterOpacity: number;
+  /**
+   * Forest density
    * @minimum 0
    * @maximum 1
    */
   trees: number;
+  treeColor: string;
   /**
    * @minimum 0
    * @maximum 1
    */
   buildings: number;
   /**
+   * Ancient ruin columns
    * @minimum 0
    * @maximum 1
    */
-  columns?: number;
-  columnHeight?: number;
-  columnRadius?: number;
+  columns: number;
   /**
    * @minimum 0
    * @maximum 1
    */
   fire: number;
-  fireRadius?: number;
-  fireHeight?: number;
   /**
+   * Particle effect density — use liberally for dust, rain, snow, embers, sparks, petals, mist
+   * @minimum 0
+   * @maximum 1
+   */
+  particles: number;
+  particleColor: string;
+  /**
+   * 0.01=fine dust/mist, 0.05=small dots, 0.2=noticeable flakes, 0.8=large orbs
+   * @minimum 0.01
+   * @maximum 0.8
+   */
+  particleSize: number;
+  /**
+   * @minimum 100
+   * @maximum 8000
+   */
+  particleCount: number;
+  particleMotion: SceneParamsParticleMotion;
+  /**
+   * How widely particles are spread in the scene
+   * @minimum 5
+   * @maximum 60
+   */
+  particleSpread: number;
+  /**
+   * Glowing orbs/celestial bodies
    * @minimum 0
    * @maximum 1
    */
   spheres: number;
-  sphereRadius?: number;
-  sphereY?: number;
+  sphereColor: string;
   /**
    * @minimum 0
    * @maximum 1
    */
   stars: number;
   /**
+   * Geometric ring shapes floating in scene
    * @minimum 0
    * @maximum 1
    */
-  turbulence: number;
-  col1: string;
-  col2: string;
-  col3: string;
-  skyColor: string;
-  fogColor: string;
-  fogDensity: number;
-  /**
-   * @minimum 0
-   * @maximum 1
-   */
-  timeOfDay: number;
+  rings: number;
+  ringColor: string;
+  /** Viewing angle — low=dramatic upward, high=bird's eye, horizon=eye level, closeup=intimate, wide=expansive */
+  cameraAngle: SceneParamsCameraAngle;
 }

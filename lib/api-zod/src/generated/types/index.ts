@@ -10,3 +10,6 @@ export * from "./composeSceneRequest";
 export * from "./errorResponse";
 export * from "./healthStatus";
 export * from "./sceneParams";
+export * from "./sceneParamsCameraAngle";
+export * from "./sceneParamsParticleMotion";
+export * from "./sceneParamsSceneType";

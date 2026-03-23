@@ -17,7 +17,6 @@ paths:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -30,7 +29,6 @@ paths:
       operationId: composeScene
       tags: [poetry]
       summary: Compose a 3D scene from a poetry line
-      description: Uses Claude to analyze a poetry line and return scene parameters
       requestBody:
         required: true
         content:
@@ -57,51 +55,126 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
     ErrorResponse:
       type: object
       properties:
         error:
           type: string
-      required:
-        - error
+      required: [error]
     ComposeSceneRequest:
       type: object
       properties:
         line:
           type: string
-          description: The current poetry line to visualize
         context:
           type: array
           items:
             type: string
-          description: Previous lines for context
-      required:
-        - line
+      required: [line]
     SceneParams:
       type: object
+      required:
+        - sceneType
+        - skyColor
+        - fogColor
+        - fogDensity
+        - groundColor
+        - ambientColor
+        - lightColor
+        - lightIntensity
+        - turbulence
+        - timeOfDay
+        - terrain
+        - terrainHeight
+        - terrainScale
+        - water
+        - waterColor
+        - waterOpacity
+        - trees
+        - treeColor
+        - buildings
+        - columns
+        - fire
+        - particles
+        - particleColor
+        - particleSize
+        - particleCount
+        - particleMotion
+        - particleSpread
+        - spheres
+        - sphereColor
+        - stars
+        - rings
+        - ringColor
+        - cameraAngle
       properties:
+        sceneType:
+          type: string
+          enum: [void, ocean, forest, mountain, city, ruins, fire, cosmos, desert, field, cave, storm]
+          description: Dominant world archetype — pick whichever best matches the line's imagery
+        skyColor:
+          type: string
+          description: Hex color for sky/background
+        fogColor:
+          type: string
+        fogDensity:
+          type: number
+          minimum: 0.001
+          maximum: 0.08
+        groundColor:
+          type: string
+          description: Hex color for ground/terrain surface
+        ambientColor:
+          type: string
+          description: Hex color for ambient fill light
+        lightColor:
+          type: string
+          description: Hex color for main directional light
+        lightIntensity:
+          type: number
+          minimum: 0
+          maximum: 4
+        turbulence:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: 0=serene/still, 1=violent chaos
+        timeOfDay:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: 0=midnight, 0.25=dawn, 0.5=noon, 0.75=dusk, 1=midnight
         terrain:
           type: number
           minimum: 0
           maximum: 1
+          description: Presence of terrain/hills (0=flat, 1=dramatic)
         terrainHeight:
           type: number
+          minimum: 0.5
+          maximum: 12
         terrainScale:
           type: number
+          minimum: 0.3
+          maximum: 5
         water:
           type: number
           minimum: 0
           maximum: 1
-        waterAmplitude:
+        waterColor:
+          type: string
+        waterOpacity:
           type: number
-        waterFrequency:
-          type: number
+          minimum: 0.1
+          maximum: 1
         trees:
           type: number
           minimum: 0
           maximum: 1
+          description: Forest density
+        treeColor:
+          type: string
         buildings:
           type: number
           minimum: 0
@@ -110,63 +183,54 @@ components:
           type: number
           minimum: 0
           maximum: 1
-        columnHeight:
-          type: number
-        columnRadius:
-          type: number
+          description: Ancient ruin columns
         fire:
           type: number
           minimum: 0
           maximum: 1
-        fireRadius:
+        particles:
           type: number
-        fireHeight:
+          minimum: 0
+          maximum: 1
+          description: Particle effect density — use liberally for dust, rain, snow, embers, sparks, petals, mist
+        particleColor:
+          type: string
+        particleSize:
           type: number
+          minimum: 0.01
+          maximum: 0.8
+          description: 0.01=fine dust/mist, 0.05=small dots, 0.2=noticeable flakes, 0.8=large orbs
+        particleCount:
+          type: number
+          minimum: 100
+          maximum: 8000
+        particleMotion:
+          type: string
+          enum: [still, float, rain, rise, spiral, orbit, scatter, drift, pulse]
+        particleSpread:
+          type: number
+          minimum: 5
+          maximum: 60
+          description: How widely particles are spread in the scene
         spheres:
           type: number
           minimum: 0
           maximum: 1
-        sphereRadius:
-          type: number
-        sphereY:
-          type: number
+          description: Glowing orbs/celestial bodies
+        sphereColor:
+          type: string
         stars:
           type: number
           minimum: 0
           maximum: 1
-        turbulence:
+        rings:
           type: number
           minimum: 0
           maximum: 1
-        col1:
+          description: Geometric ring shapes floating in scene
+        ringColor:
           type: string
-        col2:
+        cameraAngle:
           type: string
-        col3:
-          type: string
-        skyColor:
-          type: string
-        fogColor:
-          type: string
-        fogDensity:
-          type: number
-        timeOfDay:
-          type: number
-          minimum: 0
-          maximum: 1
-      required:
-        - terrain
-        - water
-        - trees
-        - buildings
-        - fire
-        - spheres
-        - stars
-        - turbulence
-        - col1
-        - col2
-        - col3
-        - skyColor
-        - fogColor
-        - fogDensity
-        - timeOfDay
+          enum: [horizon, high, low, closeup, wide]
+          description: Viewing angle — low=dramatic upward, high=bird's eye, horizon=eye level, closeup=intimate, wide=expansive
