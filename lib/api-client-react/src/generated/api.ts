@@ -5,18 +5,26 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
+  MutationFunction,
   QueryFunction,
   QueryKey,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult,
 } from "@tanstack/react-query";
 
-import type { HealthStatus } from "./api.schemas";
+import type {
+  ComposeSceneRequest,
+  ErrorResponse,
+  HealthStatus,
+  SceneParams,
+} from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
-import type { ErrorType } from "../custom-fetch";
+import type { ErrorType, BodyType } from "../custom-fetch";
 
 type AwaitedInput<T> = PromiseLike<T> | T;
 
@@ -99,3 +107,90 @@ export function useHealthCheck<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * Uses Claude to analyze a poetry line and return scene parameters
+ * @summary Compose a 3D scene from a poetry line
+ */
+export const getComposeSceneUrl = () => {
+  return `/api/compose-scene`;
+};
+
+export const composeScene = async (
+  composeSceneRequest: ComposeSceneRequest,
+  options?: RequestInit,
+): Promise<SceneParams> => {
+  return customFetch<SceneParams>(getComposeSceneUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(composeSceneRequest),
+  });
+};
+
+export const getComposeSceneMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof composeScene>>,
+    TError,
+    { data: BodyType<ComposeSceneRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof composeScene>>,
+  TError,
+  { data: BodyType<ComposeSceneRequest> },
+  TContext
+> => {
+  const mutationKey = ["composeScene"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof composeScene>>,
+    { data: BodyType<ComposeSceneRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return composeScene(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ComposeSceneMutationResult = NonNullable<
+  Awaited<ReturnType<typeof composeScene>>
+>;
+export type ComposeSceneMutationBody = BodyType<ComposeSceneRequest>;
+export type ComposeSceneMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Compose a 3D scene from a poetry line
+ */
+export const useComposeScene = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof composeScene>>,
+    TError,
+    { data: BodyType<ComposeSceneRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof composeScene>>,
+  TError,
+  { data: BodyType<ComposeSceneRequest> },
+  TContext
+> => {
+  return useMutation(getComposeSceneMutationOptions(options));
+};

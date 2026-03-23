@@ -1,6 +1,5 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
   description: API specification
@@ -10,6 +9,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: poetry
+    description: Poetry scene composition
 paths:
   /healthz:
     get:
@@ -24,6 +25,31 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /compose-scene:
+    post:
+      operationId: composeScene
+      tags: [poetry]
+      summary: Compose a 3D scene from a poetry line
+      description: Uses Claude to analyze a poetry line and return scene parameters
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ComposeSceneRequest"
+      responses:
+        "200":
+          description: Scene parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SceneParams"
+        "500":
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +59,114 @@ components:
           type: string
       required:
         - status
-
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+    ComposeSceneRequest:
+      type: object
+      properties:
+        line:
+          type: string
+          description: The current poetry line to visualize
+        context:
+          type: array
+          items:
+            type: string
+          description: Previous lines for context
+      required:
+        - line
+    SceneParams:
+      type: object
+      properties:
+        terrain:
+          type: number
+          minimum: 0
+          maximum: 1
+        terrainHeight:
+          type: number
+        terrainScale:
+          type: number
+        water:
+          type: number
+          minimum: 0
+          maximum: 1
+        waterAmplitude:
+          type: number
+        waterFrequency:
+          type: number
+        trees:
+          type: number
+          minimum: 0
+          maximum: 1
+        buildings:
+          type: number
+          minimum: 0
+          maximum: 1
+        columns:
+          type: number
+          minimum: 0
+          maximum: 1
+        columnHeight:
+          type: number
+        columnRadius:
+          type: number
+        fire:
+          type: number
+          minimum: 0
+          maximum: 1
+        fireRadius:
+          type: number
+        fireHeight:
+          type: number
+        spheres:
+          type: number
+          minimum: 0
+          maximum: 1
+        sphereRadius:
+          type: number
+        sphereY:
+          type: number
+        stars:
+          type: number
+          minimum: 0
+          maximum: 1
+        turbulence:
+          type: number
+          minimum: 0
+          maximum: 1
+        col1:
+          type: string
+        col2:
+          type: string
+        col3:
+          type: string
+        skyColor:
+          type: string
+        fogColor:
+          type: string
+        fogDensity:
+          type: number
+        timeOfDay:
+          type: number
+          minimum: 0
+          maximum: 1
+      required:
+        - terrain
+        - water
+        - trees
+        - buildings
+        - fire
+        - spheres
+        - stars
+        - turbulence
+        - col1
+        - col2
+        - col3
+        - skyColor
+        - fogColor
+        - fogDensity
+        - timeOfDay

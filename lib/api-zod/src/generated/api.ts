@@ -14,3 +14,105 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * Uses Claude to analyze a poetry line and return scene parameters
+ * @summary Compose a 3D scene from a poetry line
+ */
+export const ComposeSceneBody = zod.object({
+  line: zod.string().describe("The current poetry line to visualize"),
+  context: zod
+    .array(zod.string())
+    .optional()
+    .describe("Previous lines for context"),
+});
+
+export const composeSceneResponseTerrainMin = 0;
+export const composeSceneResponseTerrainMax = 1;
+
+export const composeSceneResponseWaterMin = 0;
+export const composeSceneResponseWaterMax = 1;
+
+export const composeSceneResponseTreesMin = 0;
+export const composeSceneResponseTreesMax = 1;
+
+export const composeSceneResponseBuildingsMin = 0;
+export const composeSceneResponseBuildingsMax = 1;
+
+export const composeSceneResponseColumnsMin = 0;
+export const composeSceneResponseColumnsMax = 1;
+
+export const composeSceneResponseFireMin = 0;
+export const composeSceneResponseFireMax = 1;
+
+export const composeSceneResponseSpheresMin = 0;
+export const composeSceneResponseSpheresMax = 1;
+
+export const composeSceneResponseStarsMin = 0;
+export const composeSceneResponseStarsMax = 1;
+
+export const composeSceneResponseTurbulenceMin = 0;
+export const composeSceneResponseTurbulenceMax = 1;
+
+export const composeSceneResponseTimeOfDayMin = 0;
+export const composeSceneResponseTimeOfDayMax = 1;
+
+export const ComposeSceneResponse = zod.object({
+  terrain: zod
+    .number()
+    .min(composeSceneResponseTerrainMin)
+    .max(composeSceneResponseTerrainMax),
+  terrainHeight: zod.number().optional(),
+  terrainScale: zod.number().optional(),
+  water: zod
+    .number()
+    .min(composeSceneResponseWaterMin)
+    .max(composeSceneResponseWaterMax),
+  waterAmplitude: zod.number().optional(),
+  waterFrequency: zod.number().optional(),
+  trees: zod
+    .number()
+    .min(composeSceneResponseTreesMin)
+    .max(composeSceneResponseTreesMax),
+  buildings: zod
+    .number()
+    .min(composeSceneResponseBuildingsMin)
+    .max(composeSceneResponseBuildingsMax),
+  columns: zod
+    .number()
+    .min(composeSceneResponseColumnsMin)
+    .max(composeSceneResponseColumnsMax)
+    .optional(),
+  columnHeight: zod.number().optional(),
+  columnRadius: zod.number().optional(),
+  fire: zod
+    .number()
+    .min(composeSceneResponseFireMin)
+    .max(composeSceneResponseFireMax),
+  fireRadius: zod.number().optional(),
+  fireHeight: zod.number().optional(),
+  spheres: zod
+    .number()
+    .min(composeSceneResponseSpheresMin)
+    .max(composeSceneResponseSpheresMax),
+  sphereRadius: zod.number().optional(),
+  sphereY: zod.number().optional(),
+  stars: zod
+    .number()
+    .min(composeSceneResponseStarsMin)
+    .max(composeSceneResponseStarsMax),
+  turbulence: zod
+    .number()
+    .min(composeSceneResponseTurbulenceMin)
+    .max(composeSceneResponseTurbulenceMax),
+  col1: zod.string(),
+  col2: zod.string(),
+  col3: zod.string(),
+  skyColor: zod.string(),
+  fogColor: zod.string(),
+  fogDensity: zod.number(),
+  timeOfDay: zod
+    .number()
+    .min(composeSceneResponseTimeOfDayMin)
+    .max(composeSceneResponseTimeOfDayMax),
+});

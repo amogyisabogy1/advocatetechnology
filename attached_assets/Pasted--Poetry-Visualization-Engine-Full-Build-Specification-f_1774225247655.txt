@@ -1,0 +1,268 @@
+# Poetry Visualization Engine — Full Build Specification for Replit Agent
+
+## What to Build
+
+A web app where you write poetry in a live editor and each line generates a unique, immersive 3D scene rendered in real-time behind the text. When you press Enter after writing a line, the background morphs into a new 3D landscape that visualizes the imagery, emotion, and atmosphere of what you wrote. The app also has a browse mode where you can navigate existing poems line-by-line, with each line producing a distinct visual world.
+
+This is NOT a particle system or abstract color visualization. Each line should produce recognizable 3D scenes — actual forests with trees, oceans with waves, mountains with snow, fire with glowing embers, cities with buildings, birds in flight, etc. — all procedurally generated from the text.
+
+## Tech Stack
+
+- **Next.js 14+ (App Router)** — framework
+- **React Three Fiber (@react-three/fiber)** — 3D rendering
+- **@react-three/drei** — utilities (Environment, Sky, Stars, Cloud, OrbitControls, Text, shaderMaterial helpers)
+- **@react-three/postprocessing** — bloom, chromatic aberration, vignette, depth of field
+- **Three.js (latest)** — underlying 3D engine
+- **GSAP** — transition orchestration between scenes (timeline-based, precise easing)
+- **Anthropic Claude API** (claude-sonnet-4-20250514) — scene composition per line via Next.js API route
+- **TypeScript** — type safety throughout
+- **Tailwind CSS** — UI styling
+
+## Architecture Overview
+
+### Two Rendering Approaches (implement both, blend them)
+
+**Layer 1: SDF Raymarching Shader (background)**
+A fullscreen fragment shader that raymarches signed distance fields. This renders the "world" — terrain, sky, atmosphere, fog, volumetric effects. It's controlled by ~20 uniforms that Claude sets per line. This runs on a `PlaneGeometry(2,2)` behind everything else.
+
+Key SDF primitives to include in the shader library (from Inigo Quilez):
+- Sphere, box, rounded box, cylinder, torus, cone, capsule, ellipsoid, plane
+- Smooth union (`smin` with polynomial blending, k parameter)
+- Subtraction, intersection
+- Domain repetition (`mod()` for infinite tiling — forests from one tree, cities from one building)
+- Domain warping (FBM noise displacement for organic terrain)
+- FBM noise (5 octaves) for terrain, clouds, fire
+- Perlin/simplex noise for texture variation
+
+The shader should include:
+- Proper lighting: directional sun with position driven by `timeOfDay` uniform, ambient + diffuse + specular
+- Soft shadows via secondary raymarch
+- Ambient occlusion (3-sample cheap AO)
+- Exponential fog with color uniform
+- Procedural sky with sun disc, atmospheric glow, stars (fade with daylight), clouds (FBM)
+- Aurora borealis effect (for night/mystical scenes)
+- Post-processing: vignette, film grain, tone mapping (ACES filmic)
+
+Uniforms Claude controls:
+```
+terrain (0-1), terrainHeight (0.5-6), terrainScale (0.03-0.15)
+water (0-1), waterAmplitude (0.1-0.6), waterFrequency (0.5-2.0)
+trees (0-1) — domain-repeated trunk+canopy SDFs
+buildings (0-1) — domain-repeated box SDFs with window cutouts
+columns (0-1), columnHeight, columnRadius
+fire (0-1), fireRadius, fireHeight — noise-displaced volume
+spheres (0-1), sphereRadius, sphereY — abstract objects
+stars (0-1) — star intensity multiplier
+turbulence (0-1) — global noise displacement
+col1, col2, col3 (hex) — primary, secondary, accent colors
+skyColor, fogColor (hex)
+fogDensity (0.01-0.08)
+timeOfDay (0=midnight, 0.25=dawn, 0.5=noon, 0.75=sunset)
+```
+
+**Layer 2: React Three Fiber Scene Objects (foreground)**
+On top of the raymarched background, R3F renders specific 3D objects that Claude requests:
+- Loaded GLTF models (from a curated library or poly.pizza API)
+- Procedural geometry (trees via L-system branching, terrain meshes, water planes with Gerstner waves)
+- Particle systems (rain, snow, leaves, fireflies, embers, dust)
+- Text rendering of the current line using drei's `<Text>` component
+
+Use `@react-three/postprocessing` EffectComposer for:
+- Selective bloom (emissive materials glow)
+- Chromatic aberration (subtle, mood-dependent)
+- Vignette (stronger for dark/somber scenes)
+- Depth of field (subtle, adds atmosphere)
+
+### Claude API Integration
+
+**Next.js API Route: `/api/compose-scene`**
+
+Claude acts as a "scene compositor" — it analyzes each poetry line and outputs structured JSON describing what the 3D scene should look like. The prompt should instruct Claude to:
+
+1. Interpret the literal imagery (roads, trees, fire, water, birds)
+2. Interpret the emotional tone (valence, arousal)
+3. Map both to specific scene parameters
+4. Choose colors that match the mood and imagery
+5. Set time of day, fog, turbulence appropriately
+6. Make each line's scene DRAMATICALLY different from the previous one
+
+**System prompt for Claude:**
+```
+You are a 3D scene compositor for a poetry visualization engine. For each poetry line, you design a unique visual scene by setting parameters that control a raymarched SDF renderer.
+
+Available scene elements (set weight 0.0-1.0):
+- terrain: FBM noise-displaced ground (terrainHeight: 0.5-6.0, terrainScale: 0.03-0.15)
+- water: animated wave surface (waterAmplitude: 0.1-0.6, waterFrequency: 0.5-2.0)  
+- trees: repeated trunk+canopy SDFs
+- buildings: repeated box SDFs with window cutouts
+- columns: stone pillars (columnHeight: 1-6, columnRadius: 0.1-0.5)
+- fire: noise-displaced volumetric fire (fireRadius: 0.3-2.0, fireHeight: 1-5)
+- spheres: abstract orb objects (sphereRadius: 0.3-2.0, sphereY: 0.5-4.0)
+- stars: star intensity multiplier
+
+Global controls:
+- turbulence: noise displacement amount (0-1)
+- col1: "#hex" primary ground/material color
+- col2: "#hex" secondary/height-based color  
+- col3: "#hex" accent/highlight color
+- skyColor: "#hex"
+- fogColor: "#hex"
+- fogDensity: 0.01-0.08
+- timeOfDay: 0=midnight, 0.25=dawn, 0.5=noon, 0.75=sunset
+
+Additional scene objects (array of specific 3D objects to place):
+- Each object: { type: "tree"|"rock"|"bird"|"person"|"house"|..., position: [x,y,z], scale: number }
+
+Rules:
+- Be LITERAL and SPECIFIC to the imagery
+- "Two roads diverged in a yellow wood" → terrain:0.3, trees:1, col3:"#d4a020", timeOfDay:0.4
+- "Tyger burning bright" → fire:1, trees:0.5, col3:"#ff6020", timeOfDay:0.08
+- Each line should feel visually DISTINCT from the previous
+- Blend multiple elements for rich scenes (forest+stars for "forests of the night")
+
+Return ONLY valid JSON.
+```
+
+**Caching:** Cache Claude responses by line text hash in a Map. When navigating back to a previously seen line, use the cached response instantly.
+
+**Two-tier analysis:**
+1. **Instant (0ms):** Client-side keyword detection sets approximate scene parameters immediately when Enter is pressed. This drives the initial scene transition.
+2. **Rich (1-3s):** Claude's response arrives and overrides with more nuanced, specific parameters. GSAP smoothly transitions from the approximate scene to the refined one.
+
+### Transition System
+
+This is critical for the experience feeling alive rather than jarring.
+
+**GSAP Timeline per transition:**
+When moving from line A's scene to line B's scene:
+1. All shader uniforms lerp toward new target values over 1.5-2 seconds using `gsap.to()` with `power2.inOut` easing
+2. Colors transition via `THREE.Color.lerp()` in the render loop (faster, smoother than GSAP for colors)
+3. Camera position/target animate along a smooth path
+4. Post-processing intensities adjust (bloom increases for fire scenes, vignette increases for dark scenes)
+5. Particle systems cross-fade (old particles fade out, new particles fade in)
+
+**Key technique:** Lerp all shader uniforms in the `useFrame` render loop at ~3-5% per frame for organic exponential ease-out. GSAP handles the target-setting and timeline coordination; the render loop handles the actual interpolation.
+
+### Editor Mode (default)
+
+A full-height textarea pinned to the bottom of the screen over the 3D background with a gradient fade. The user writes poetry line by line. 
+
+**On Enter:**
+1. Immediately run client-side keyword analysis on the completed line
+2. Set approximate scene parameters → background starts transitioning
+3. Fire Claude API call with the line + last 3 lines as context
+4. When Claude responds, update scene parameters → background smoothly refines
+
+The textarea should feel like a focused writing tool — minimal chrome, beautiful typography (Cormorant Garamond or similar serif for the poetry text, monospace for UI labels), dark theme with very subtle glass-morphism UI elements.
+
+**Controls:**
+- "Browse Poems" button → opens a poem selector overlay
+- "View Mode" button → switches to browse mode with current text
+- Status indicator showing "local" / "composing..." / "claude" 
+
+### Browse Mode
+
+Navigate an existing poem line by line. Each line transition triggers a full scene change.
+
+**Controls:**
+- Arrow keys (left/right) or on-screen prev/next buttons
+- Dot indicators showing position in the poem (current dot is wider + colored)
+- Current line displayed in a frosted glass overlay at the top of the screen
+- "Editor" button to switch back
+- "Poems" button to select a different poem
+
+### Preset Poems to Include
+
+1. William Blake — "The Tyger" (Tyger Tyger burning bright / In the forests of the night...)
+2. Robert Frost — "The Road Not Taken" (full 4 stanzas)
+3. Emily Dickinson — "Hope is the thing with feathers" (full)
+4. Langston Hughes — "Dreams" (Hold fast to dreams...)
+5. Percy Shelley — "Ozymandias" (full)
+
+## Design Aesthetic
+
+**Tone:** Dark, immersive, cinematic. The UI should feel like it disappears — the 3D scene is the star.
+
+**Typography:** 
+- Poetry text: Cormorant Garamond (italic, 300 weight) — elegant, literary
+- UI labels/controls: DM Mono (300 weight) — minimal, technical
+- Load via Google Fonts
+
+**UI Elements:**
+- All controls use frosted glass (backdrop-filter: blur(16px), dark semi-transparent backgrounds)
+- Very subtle borders (rgba(255,255,255,0.04-0.08))
+- Muted text colors (rgba(255,255,255,0.2-0.5) for UI, 0.9+ for poetry text)
+- No bright colors in the UI — all color comes from the 3D scene
+- Smooth transitions on all UI state changes (0.3-0.5s)
+
+**Layout:**
+- 3D scene fills entire viewport
+- Editor textarea: bottom-aligned, max-width 640px, gradient fade above it
+- Current line overlay: top-center, frosted glass pill
+- Navigation controls: bottom-center (above editor in editor mode)
+- "poetry · engine" title: top-left, very subtle
+
+## File Structure
+
+```
+/app
+  /api
+    /compose-scene
+      route.ts          — Claude API proxy
+  layout.tsx
+  page.tsx              — main app shell
+/components
+  /three
+    RaymarchBackground.tsx   — fullscreen SDF shader
+    SceneObjects.tsx          — R3F foreground objects
+    PostProcessing.tsx        — bloom, DOF, vignette
+    TransitionManager.tsx     — GSAP-driven uniform transitions
+  /ui
+    Editor.tsx                — textarea + controls
+    BrowseMode.tsx            — line navigation
+    PoemSelector.tsx          — poem browser overlay
+    LineOverlay.tsx            — current line display
+/lib
+  claude.ts                   — API call wrapper + caching
+  localAnalysis.ts            — keyword-based fallback
+  sceneParams.ts              — type definitions for scene parameters
+  shaders/
+    raymarching.frag          — the main SDF fragment shader
+    raymarching.vert          — simple vertex shader
+    sdfPrimitives.glsl        — SDF library (Quilez primitives)
+    noise.glsl                — simplex noise, FBM
+/public
+  — (no external assets needed, everything is procedural)
+```
+
+## Environment Variables
+
+```
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+Only needed server-side in the API route. Never expose to client.
+
+## Performance Targets
+
+- 60fps on desktop, 30fps on mobile
+- Raymarching: 70-80 max steps, half-resolution rendering option for mobile
+- Shader compilation: single shader, no runtime recompilation
+- Claude API: <3 second response time per line
+- Scene transitions: 1.5-2 second smooth lerp
+- Initial load: <3 seconds to first rendered frame
+
+## Key References
+
+- Inigo Quilez SDF functions: https://iquilezles.org/articles/distfunctions/
+- Inigo Quilez smooth min: https://iquilezles.org/articles/smin/
+- Three.js raymarching in R3F: use a fullscreen ShaderMaterial on PlaneGeometry(2,2) with frustumCulled=false
+- Maxime Heckel's raymarching blog: https://blog.maximeheckel.com/posts/painting-with-math-a-gentle-study-of-raymarching/
+- React Three Fiber docs: https://r3f.docs.pmnd.rs/
+- drei docs: https://drei.docs.pmnd.rs/
+
+## What Success Looks Like
+
+When someone types "Two roads diverged in a yellow wood" and presses Enter, they should see an actual forest scene — repeated trees with trunks and canopies, golden-yellow autumn light, a terrain ground with slight variation, warm fog, afternoon sky — materialize behind their text over 1-2 seconds. When they type the next line "In the forests of the night," the trees should stay but the sky should darken to deep blue-black, stars should appear, the fog should turn cold, and the lighting should shift to moonlight. Each line should feel like stepping into a different painting.
+
+When someone writes their own poetry — anything at all — the visualization should feel specific to what they wrote, not generic. "The old man sat by the river watching clouds" should look completely different from "Lightning cracks the obsidian sky." The system should handle any subject matter, not just nature poetry.

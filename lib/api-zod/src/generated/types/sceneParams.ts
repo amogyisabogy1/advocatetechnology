@@ -5,20 +5,6 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-export interface HealthStatus {
-  status: string;
-}
-
-export interface ErrorResponse {
-  error: string;
-}
-
-export interface ComposeSceneRequest {
-  /** The current poetry line to visualize */
-  line: string;
-  /** Previous lines for context */
-  context?: string[];
-}
 
 export interface SceneParams {
   /**
