@@ -5,7 +5,7 @@ import { SceneCanvas } from "@/components/three/SceneCanvas";
 import { CuratedSceneCanvas } from "@/components/three/CuratedSceneCanvas";
 import { CURATED_POEMS } from "@/lib/curatedPoems";
 
-// ─── Preset Poems ─────────────────────────────────────────────────────────────
+// ─── Harvard Advocate Presets ─────────────────────────────────────────────────
 
 interface Preset {
   id: string;
@@ -16,59 +16,7 @@ interface Preset {
   bgCustom?: string;
 }
 
-const PRESETS: Preset[] = [
-  {
-    id: "tyger",
-    label: "The Tyger",
-    author: "Blake",
-    text: `Tyger Tyger, burning bright,
-In the forests of the night;
-What immortal hand or eye,
-Could frame thy fearful symmetry?
-
-In what distant deeps or skies,
-Burnt the fire of thine eyes?
-On what wings dare he aspire?
-What the hand, dare seize the fire?`,
-    bgScene: CURATED_POEMS.find((p) => p.id === "tyger")!.lines[0].scene,
-    bgCustom: "tiger",
-  },
-  {
-    id: "frost",
-    label: "The Road Not Taken",
-    author: "Frost",
-    text: `Two roads diverged in a yellow wood,
-And sorry I could not travel both
-And be one traveler, long I stood
-And looked down one as far as I could
-To where it bent in the undergrowth.`,
-    bgScene: CURATED_POEMS.find((p) => p.id === "frost")!.lines[0].scene,
-  },
-  {
-    id: "neruda",
-    label: "Tonight I Can Write",
-    author: "Neruda",
-    text: `Tonight I can write the saddest lines.
-Write, for example, 'The night is starry,
-and the stars shiver, blue, in the distance.'
-The night wind revolves in the sky and sings.
-I loved her, and sometimes she loved me too.
-Tonight I can write the saddest lines.`,
-    bgScene: CURATED_POEMS.find((p) => p.id === "neruda")!.lines[0].scene,
-  },
-  {
-    id: "whitman",
-    label: "O Captain!",
-    author: "Whitman",
-    text: `O Captain! my Captain! our fearful trip is done,
-The ship has weather'd every rack, the prize we sought is won,
-The port is near, the bells I hear, the people all exulting,
-But O heart! heart! heart!
-O the bleeding drops of red,
-Where on the deck my Captain lies,`,
-    bgScene: CURATED_POEMS.find((p) => p.id === "whitman")!.lines[0].scene,
-    bgCustom: "captain",
-  },
+const ADVOCATE_PRESETS: Preset[] = [
   {
     id: "weight",
     label: "Weight",
@@ -133,17 +81,19 @@ mysterious. Glee`,
   },
 ];
 
+const DEFAULT_PRESET = ADVOCATE_PRESETS[0];
+
 type View = "input" | "visualize";
 
 export function PoetryEngine() {
   const [view, setView] = useState<View>("input");
-  const [poemText, setPoemText] = useState(PRESETS[0].text);
-  const [selectedPreset, setSelectedPreset] = useState<string | null>("tyger");
-  const [bgScene, setBgScene] = useState<SceneParams>(PRESETS[0].bgScene);
-  const [bgCustom, setBgCustom] = useState<string | undefined>(PRESETS[0].bgCustom);
+  const [poemText, setPoemText] = useState(DEFAULT_PRESET.text);
+  const [selectedPreset, setSelectedPreset] = useState<string | null>(DEFAULT_PRESET.id);
+  const [bgScene, setBgScene] = useState<SceneParams>(DEFAULT_PRESET.bgScene);
+  const [bgCustom, setBgCustom] = useState<string | undefined>(DEFAULT_PRESET.bgCustom);
   const [lines, setLines] = useState<string[]>([]);
   const [lineIndex, setLineIndex] = useState(0);
-  const [sceneParams, setSceneParams] = useState<SceneParams>(PRESETS[0].bgScene);
+  const [sceneParams, setSceneParams] = useState<SceneParams>(DEFAULT_PRESET.bgScene);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [loadingLine, setLoadingLine] = useState<number | null>(null);
   const [sceneCache, setSceneCache] = useState<Record<number, SceneParams>>({});
@@ -180,15 +130,25 @@ export function PoetryEngine() {
     [composeScene, sceneCache]
   );
 
-  const handleVisualize = () => {
-    const parsed = poemText
-      .split("\n")
-      .map((l) => l.trim())
-      .filter((l) => l.length > 0);
+  const handleVisualize = (overrideText?: string, overridePresetId?: string | null) => {
+    const text = overrideText ?? poemText;
+    const presetId = overridePresetId !== undefined ? overridePresetId : selectedPreset;
+    const parsed = text.split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
     if (parsed.length === 0) return;
     setLines(parsed);
     setLineIndex(0);
-    setSceneCache({});
+
+    // Pre-populate scene cache with curated scenes for advocate presets — no AI needed
+    const curatedPoem = presetId ? CURATED_POEMS.find((p) => p.id === presetId) : null;
+    if (curatedPoem) {
+      const cache: Record<number, SceneParams> = {};
+      curatedPoem.lines.forEach((line, i) => { cache[i] = line.scene; });
+      setSceneCache(cache);
+      setSceneParams(curatedPoem.lines[0].scene);
+    } else {
+      setSceneCache({});
+    }
+
     setView("visualize");
   };
 
@@ -214,7 +174,7 @@ export function PoetryEngine() {
   const handleEnterOwn = () => {
     setSelectedPreset(null);
     setPoemText("");
-    setBgScene(PRESETS[0].bgScene);
+    setBgScene(DEFAULT_PRESET.bgScene);
     setBgCustom(undefined);
     setTimeout(() => textareaRef.current?.focus(), 50);
   };
@@ -240,7 +200,7 @@ export function PoetryEngine() {
       <InputView
         poemText={poemText}
         onPoemTextChange={(v) => { setPoemText(v); setSelectedPreset(null); }}
-        onVisualize={handleVisualize}
+        onVisualize={() => handleVisualize()}
         selectedPreset={selectedPreset}
         onSelectPreset={selectPreset}
         onEnterOwn={handleEnterOwn}
@@ -260,6 +220,7 @@ export function PoetryEngine() {
       loadingLine={loadingLine}
       onGoToLine={goToLine}
       onBack={handleBack}
+      selectedPreset={selectedPreset}
     />
   );
 }
@@ -279,15 +240,9 @@ interface InputViewProps {
 }
 
 function InputView({
-  poemText,
-  onPoemTextChange,
-  onVisualize,
-  selectedPreset,
-  onSelectPreset,
-  onEnterOwn,
-  bgScene,
-  bgCustom,
-  textareaRef,
+  poemText, onPoemTextChange, onVisualize,
+  selectedPreset, onSelectPreset, onEnterOwn,
+  bgScene, bgCustom, textareaRef,
 }: InputViewProps) {
   const lineCount = poemText.split("\n").map((l) => l.trim()).filter((l) => l.length > 0).length;
   const isCustom = selectedPreset === null;
@@ -298,166 +253,189 @@ function InputView({
       <CuratedSceneCanvas params={bgScene} isTransitioning={false} customScene={bgCustom} />
 
       {/* Vignette */}
-      <div
-        className="absolute inset-0 z-10"
-        style={{ background: "radial-gradient(ellipse at center, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.65) 100%)" }}
-      />
+      <div className="absolute inset-0 z-10" style={{
+        background: "radial-gradient(ellipse at center, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.68) 100%)",
+      }} />
 
-      {/* Layout: card + preset bar */}
-      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center px-4 gap-4">
+      {/* Layout */}
+      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center px-4 gap-3">
 
-        {/* Input card */}
-        <div style={{
-          width: "100%", maxWidth: 560,
-          background: "rgba(4,5,15,0.72)",
-          backdropFilter: "blur(20px)",
-          borderRadius: 20,
-          border: "1px solid rgba(255,255,255,0.08)",
-          padding: "28px 28px 20px",
-          boxShadow: "0 24px 80px rgba(0,0,0,0.7)",
-        }}>
-          <p style={{
-            fontFamily: "Inter, sans-serif", fontSize: 10,
-            letterSpacing: "0.2em", textTransform: "uppercase",
-            color: "rgba(255,140,30,0.65)", marginBottom: 14,
-          }}>
-            Poetry Visualization Engine
-          </p>
-
-          <textarea
-            ref={textareaRef}
-            value={poemText}
-            onChange={(e) => onPoemTextChange(e.target.value)}
-            rows={isCustom ? 8 : 9}
-            spellCheck={false}
-            placeholder={isCustom ? "Paste or type your poem here…" : undefined}
-            style={{
-              width: "100%", resize: "none",
-              background: "transparent", border: "none", outline: "none",
-              fontFamily: "Georgia, serif", fontSize: 15,
-              lineHeight: 1.85,
-              color: isCustom && !poemText ? "rgba(255,255,255,0.28)" : "rgba(255,255,255,0.88)",
-              caretColor: "#ff8c1a", display: "block",
-            }}
-            onKeyDown={(e) => {
-              if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); onVisualize(); }
-            }}
-          />
-
+        {/* ── Main input card (shown only when a preset is selected or custom) ── */}
+        {(selectedPreset || isCustom) && (
           <div style={{
-            marginTop: 16, paddingTop: 14,
-            borderTop: "1px solid rgba(255,255,255,0.07)",
-            display: "flex", alignItems: "center", justifyContent: "space-between",
+            width: "100%", maxWidth: 560,
+            background: "rgba(4,5,15,0.75)",
+            backdropFilter: "blur(24px)",
+            borderRadius: 20,
+            border: "1px solid rgba(255,255,255,0.08)",
+            padding: "26px 28px 20px",
+            boxShadow: "0 28px 80px rgba(0,0,0,0.75)",
           }}>
-            <span style={{ fontFamily: "Inter, sans-serif", fontSize: 11, color: "rgba(255,255,255,0.2)", letterSpacing: "0.04em" }}>
-              {lineCount > 0 ? `${lineCount} line${lineCount !== 1 ? "s" : ""}` : ""}
-            </span>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ fontFamily: "Inter, sans-serif", fontSize: 11, color: "rgba(255,255,255,0.16)" }}>⌘↵</span>
-              <button
-                onClick={onVisualize}
-                disabled={lineCount === 0}
-                style={{
-                  padding: "8px 20px", borderRadius: 10,
-                  background: lineCount === 0 ? "rgba(212,120,20,0.2)" : "linear-gradient(135deg, #e8900a 0%, #c86808 100%)",
-                  color: lineCount === 0 ? "rgba(255,255,255,0.2)" : "#fff",
-                  fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 600,
-                  letterSpacing: "0.04em", border: "none",
-                  cursor: lineCount === 0 ? "not-allowed" : "pointer",
-                  boxShadow: lineCount > 0 ? "0 4px 16px rgba(232,144,10,0.4)" : "none",
-                  transition: "all 0.15s ease",
-                }}
-              >
-                Visualize →
-              </button>
+            {/* Tiny label */}
+            <p style={{
+              fontFamily: "Inter, sans-serif", fontSize: 10,
+              letterSpacing: "0.2em", textTransform: "uppercase",
+              color: "rgba(255,140,30,0.6)", marginBottom: 14,
+            }}>
+              Poetry Visualization Engine
+            </p>
+
+            {/* Poem text */}
+            <textarea
+              ref={textareaRef}
+              value={poemText}
+              onChange={(e) => onPoemTextChange(e.target.value)}
+              rows={isCustom ? 8 : 9}
+              spellCheck={false}
+              placeholder={isCustom ? "Paste or type your poem here…" : undefined}
+              style={{
+                width: "100%", resize: "none",
+                background: "transparent", border: "none", outline: "none",
+                fontFamily: "Georgia, serif", fontSize: 15, lineHeight: 1.85,
+                color: "rgba(255,255,255,0.88)",
+                caretColor: "#ff8c1a", display: "block",
+              }}
+              onKeyDown={(e) => {
+                if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); onVisualize(); }
+              }}
+            />
+
+            {/* Bottom row */}
+            <div style={{
+              marginTop: 16, paddingTop: 14,
+              borderTop: "1px solid rgba(255,255,255,0.07)",
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+            }}>
+              <span style={{ fontFamily: "Inter, sans-serif", fontSize: 11, color: "rgba(255,255,255,0.2)" }}>
+                {lineCount > 0 ? `${lineCount} line${lineCount !== 1 ? "s" : ""}` : ""}
+              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontFamily: "Inter, sans-serif", fontSize: 11, color: "rgba(255,255,255,0.16)" }}>⌘↵</span>
+                <button
+                  onClick={onVisualize}
+                  disabled={lineCount === 0}
+                  style={{
+                    padding: "8px 20px", borderRadius: 10,
+                    background: lineCount === 0
+                      ? "rgba(212,120,20,0.18)"
+                      : "linear-gradient(135deg, #e8900a 0%, #c86808 100%)",
+                    color: lineCount === 0 ? "rgba(255,255,255,0.2)" : "#fff",
+                    fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 600,
+                    letterSpacing: "0.04em", border: "none",
+                    cursor: lineCount === 0 ? "not-allowed" : "pointer",
+                    boxShadow: lineCount > 0 ? "0 4px 16px rgba(232,144,10,0.4)" : "none",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  Visualize →
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Preset / Enter-own bar */}
-        <div style={{
-          display: "flex", alignItems: "center",
-          gap: 6, flexWrap: "wrap", justifyContent: "center",
-          maxWidth: 620,
-        }}>
-          {/* 4 preset pills */}
-          {PRESETS.map((preset) => {
-            const isActive = selectedPreset === preset.id;
-            return (
-              <button
-                key={preset.id}
-                onClick={() => onSelectPreset(preset)}
-                style={{
-                  padding: "7px 16px", borderRadius: 20,
-                  border: `1px solid ${isActive ? "rgba(255,140,30,0.7)" : "rgba(255,255,255,0.12)"}`,
-                  background: isActive ? "rgba(255,140,30,0.18)" : "rgba(4,5,15,0.55)",
-                  backdropFilter: "blur(10px)",
-                  color: isActive ? "#ff8c1a" : "rgba(255,255,255,0.45)",
-                  fontFamily: "Georgia, serif",
-                  fontStyle: "italic",
-                  fontSize: 13,
-                  cursor: "pointer",
-                  transition: "all 0.18s ease",
-                  boxShadow: isActive ? "0 0 12px rgba(255,140,30,0.22)" : "none",
-                  whiteSpace: "nowrap",
-                }}
-                onMouseEnter={e => {
-                  if (!isActive) {
-                    (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.28)";
-                    (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.7)";
-                  }
-                }}
-                onMouseLeave={e => {
-                  if (!isActive) {
-                    (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.12)";
-                    (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.45)";
-                  }
-                }}
-              >
-                {preset.label}
-                <span style={{ marginLeft: 6, fontSize: 10, opacity: 0.55, fontStyle: "normal", fontFamily: "Inter, sans-serif" }}>
-                  {preset.author}
-                </span>
-              </button>
-            );
-          })}
+        {/* ── Harvard Advocate section ── */}
+        <div style={{ width: "100%", maxWidth: 560 }}>
 
-          {/* Divider */}
-          <div style={{ width: 1, height: 22, background: "rgba(255,255,255,0.12)", margin: "0 2px" }} />
+          {/* Section header */}
+          <div style={{
+            display: "flex", alignItems: "center", gap: 10,
+            marginBottom: 10,
+          }}>
+            <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
+            <span style={{
+              fontFamily: "Inter, sans-serif", fontSize: 9.5,
+              letterSpacing: "0.22em", textTransform: "uppercase",
+              color: "rgba(255,60,60,0.7)",
+              whiteSpace: "nowrap",
+            }}>
+              Harvard Advocate · Fear Issue
+            </span>
+            <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
+          </div>
 
-          {/* Enter your own */}
+          {/* 4 poem pills — equal width in one row */}
+          <div style={{ display: "flex", gap: 6 }}>
+            {ADVOCATE_PRESETS.map((preset) => {
+              const isActive = selectedPreset === preset.id;
+              return (
+                <button
+                  key={preset.id}
+                  onClick={() => onSelectPreset(preset)}
+                  style={{
+                    flex: 1,
+                    padding: "10px 8px",
+                    borderRadius: 12,
+                    border: `1px solid ${isActive ? "rgba(255,60,60,0.6)" : "rgba(255,255,255,0.1)"}`,
+                    background: isActive
+                      ? "rgba(255,30,30,0.15)"
+                      : "rgba(4,5,15,0.6)",
+                    backdropFilter: "blur(12px)",
+                    color: isActive ? "rgba(255,160,160,0.95)" : "rgba(255,255,255,0.45)",
+                    fontFamily: "Georgia, serif",
+                    fontStyle: "italic",
+                    fontSize: 12.5,
+                    cursor: "pointer",
+                    transition: "all 0.18s ease",
+                    boxShadow: isActive ? "0 0 18px rgba(255,40,40,0.18)" : "none",
+                    textAlign: "center" as const,
+                    display: "flex",
+                    flexDirection: "column" as const,
+                    alignItems: "center",
+                    gap: 3,
+                    minWidth: 0,
+                  }}
+                >
+                  <span style={{
+                    fontSize: 12.5,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap" as const,
+                    width: "100%",
+                    textAlign: "center",
+                  }}>
+                    {preset.label}
+                  </span>
+                  <span style={{
+                    fontStyle: "normal",
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: 9.5,
+                    letterSpacing: "0.06em",
+                    opacity: 0.55,
+                  }}>
+                    {preset.author}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* "Visualize your own poems!" — full width, below */}
           <button
             onClick={onEnterOwn}
             style={{
-              padding: "7px 16px", borderRadius: 20,
-              border: `1px solid ${isCustom ? "rgba(180,180,255,0.55)" : "rgba(255,255,255,0.18)"}`,
-              background: isCustom ? "rgba(120,100,255,0.18)" : "rgba(4,5,15,0.55)",
-              backdropFilter: "blur(10px)",
-              color: isCustom ? "rgba(200,190,255,0.9)" : "rgba(255,255,255,0.55)",
+              marginTop: 6,
+              width: "100%",
+              padding: "11px 16px",
+              borderRadius: 12,
+              border: `1px solid ${isCustom ? "rgba(160,140,255,0.55)" : "rgba(255,255,255,0.1)"}`,
+              background: isCustom
+                ? "rgba(110,90,255,0.18)"
+                : "rgba(4,5,15,0.5)",
+              backdropFilter: "blur(12px)",
+              color: isCustom ? "rgba(200,190,255,0.95)" : "rgba(255,255,255,0.4)",
               fontFamily: "Inter, sans-serif",
-              fontSize: 12, fontWeight: 500,
-              letterSpacing: "0.03em",
+              fontSize: 12.5, fontWeight: 500,
+              letterSpacing: "0.05em",
               cursor: "pointer",
               transition: "all 0.18s ease",
-              boxShadow: isCustom ? "0 0 12px rgba(140,120,255,0.2)" : "none",
-              display: "flex", alignItems: "center", gap: 6,
-              whiteSpace: "nowrap",
-            }}
-            onMouseEnter={e => {
-              if (!isCustom) {
-                (e.currentTarget as HTMLElement).style.borderColor = "rgba(180,180,255,0.45)";
-                (e.currentTarget as HTMLElement).style.color = "rgba(200,190,255,0.75)";
-              }
-            }}
-            onMouseLeave={e => {
-              if (!isCustom) {
-                (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.18)";
-                (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.55)";
-              }
+              boxShadow: isCustom ? "0 0 20px rgba(130,110,255,0.2)" : "none",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              gap: 8,
             }}
           >
-            <span style={{ fontSize: 14 }}>✎</span>
-            Enter your own
+            <span style={{ fontSize: 14, opacity: 0.7 }}>✎</span>
+            Visualize your own poems
           </button>
         </div>
       </div>
@@ -475,10 +453,14 @@ interface VisualizeViewProps {
   loadingLine: number | null;
   onGoToLine: (i: number) => void;
   onBack: () => void;
+  selectedPreset: string | null;
 }
 
-function VisualizeView({ lines, lineIndex, sceneParams, isTransitioning, loadingLine, onGoToLine, onBack }: VisualizeViewProps) {
+function VisualizeView({
+  lines, lineIndex, sceneParams, isTransitioning, loadingLine, onGoToLine, onBack, selectedPreset,
+}: VisualizeViewProps) {
   const isLoading = loadingLine !== null;
+  const curatedPoem = selectedPreset ? CURATED_POEMS.find((p) => p.id === selectedPreset) : null;
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-background">
@@ -490,13 +472,20 @@ function VisualizeView({ lines, lineIndex, sceneParams, isTransitioning, loading
           onClick={onBack}
           className="glass-lighter rounded-xl px-4 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors font-sans flex items-center gap-2"
         >
-          ← Edit poem
+          ← Back
         </button>
         <div className="flex items-center gap-2">
           {isLoading && (
             <div className="glass rounded-xl px-3 py-1.5 flex items-center gap-2">
               <div className="w-3 h-3 rounded-full border border-primary/40 border-t-primary animate-spin" />
               <span className="text-xs text-muted-foreground">Composing…</span>
+            </div>
+          )}
+          {curatedPoem && (
+            <div className="glass rounded-xl px-3 py-1.5">
+              <span className="text-xs font-sans" style={{ color: "rgba(255,100,100,0.7)", letterSpacing: "0.06em" }}>
+                Harvard Advocate · Fear
+              </span>
             </div>
           )}
           <div className="glass rounded-xl px-3 py-1.5">
@@ -541,7 +530,7 @@ function VisualizeView({ lines, lineIndex, sceneParams, isTransitioning, loading
             ))}
           </div>
           <p className="text-xs text-muted-foreground/30 text-center mt-4 font-sans">
-            Click a line · Arrow keys to navigate · Esc to edit
+            Click a line · Arrow keys to navigate · Esc to go back
           </p>
         </div>
       </div>
