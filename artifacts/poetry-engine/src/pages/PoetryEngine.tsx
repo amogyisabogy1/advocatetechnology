@@ -272,20 +272,7 @@ function LandingView({ onSelectPreset, onEnterOwn }: LandingViewProps) {
           margin: "22px 0 24px",
         }} />
 
-        {/* Subtitle */}
-        <p style={{
-          fontFamily: "Georgia, 'Times New Roman', serif",
-          fontSize: 15,
-          fontStyle: "italic",
-          color: "rgba(255,255,255,0.38)",
-          textAlign: "center",
-          lineHeight: 1.75,
-          margin: 0,
-          marginBottom: 56,
-        }}>
-          Four poems. Four particle fields.<br />
-          An interactive exhibition.
-        </p>
+        <div style={{ marginBottom: 28 }} />
 
         {/* ── Poem list ── */}
         <div style={{ width: "100%" }}>
