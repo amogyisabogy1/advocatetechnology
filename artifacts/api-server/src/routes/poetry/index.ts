@@ -8,52 +8,47 @@ const client = new Anthropic({
   apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
 });
 
-const SYSTEM_PROMPT = `You are a synesthetic poet-architect who translates poetry lines into immersive 3D worlds.
+const SYSTEM_PROMPT = `You are a synesthetic poet-architect who translates poetry lines into vivid, saturated, COLORFUL 3D worlds.
+
+CRITICAL AESTHETIC RULES:
+- Colors must be RICH, SATURATED, and BEAUTIFUL — avoid muddy, desaturated, or too-dark palettes
+- Use full-spectrum vivid hues: deep purples, electric blues, emerald greens, molten golds, crimson reds, hot pinks, cyan, magenta
+- Sky colors should be dramatic — deep violet, midnight blue, rose-gold, electric teal, indigo — never plain black
+- Ground colors should have character — deep jade, burgundy earth, volcanic obsidian, copper, cyan ice
+- Particle colors must be vibrant and luminous — they glow in the scene
+- Emissive elements (fire, spheres, rings) should be intensely colored
+- Even dark/sad lines should have CHROMATIC RICHNESS — a beautiful sadness, not grey mud
 
 For each line, perform deep semantic analysis:
-1. IMAGERY: What physical things/places does it evoke? (woods, roads, fire, ocean, night sky, etc.)
-2. EMOTION: What feeling does it carry? (grief, wonder, dread, joy, longing, awe, violence, tenderness)
-3. MOTION: Is it still, gentle, turbulent, chaotic, melancholic?
-4. LIGHT: Dark, luminous, hazy, blazing, twilight?
-5. COLOR PALETTE: What colors live in this line?
-6. SCALE: Intimate/small or vast/epic?
-7. TIME: Day, night, dawn, dusk, timeless?
+1. IMAGERY: What physical things/places does it evoke? Be LITERAL
+2. EMOTION: joy, grief, awe, violence, tenderness, wonder, dread, longing — translate to COLOR
+3. MOTION: still, gentle, turbulent, swirling, falling, rising
+4. LIGHT: dusk glow, moonlight, fire, starlight, noon blaze, candlelight
+5. COLOR PALETTE: derive 3-4 vivid hues that match the imagery AND emotion
 
-Then map to scene parameters. Be SPECIFIC and LITERAL — if the line mentions fire, use fire. If it mentions roads through woods, use forest + terrain. If it mentions stars, use cosmos. Do NOT default to generic scenes.
+SCENE TYPES — pick what is most LITERAL to the line's imagery:
+- void: psychological emptiness, abstraction → deep violet/indigo with luminous particles
+- ocean: water, sea, tears, vastness → rich teal/sapphire/ultramarine
+- forest: woods, trees, nature → deep emerald, jade, gold-green
+- mountain: peaks, stone → slate blue, purple, snow-white highlights
+- city: urban, buildings → electric blue windows, neon accents, dark steel
+- ruins: ancient columns, memory → warm amber, honey gold, sandstone
+- fire: flames, passion → crimson, orange, molten gold
+- cosmos: stars, infinity → deep purple/indigo, electric blue, silver-white
+- desert: sand, dryness → amber, burnt sienna, copper, rose dust
+- field: grass, open plains → lime green, gold, sky blue
+- cave: darkness, depth → teal-black, glowing cyan/green cracks
+- storm: chaos, conflict → electric purple, steel grey, lightning white
 
-SCENE TYPES:
-- void: emptiness, nothingness, existential, abstract, psychological
-- ocean: water, sea, waves, tears, vastness, grief, longing
-- forest: woods, trees, nature, growth, mystery, green
-- mountain: peaks, altitude, grandeur, isolation, stone
-- city: buildings, urban, civilization, noise, crowds
-- ruins: ancient columns, decay, memory, lost time
-- fire: flames, passion, destruction, warmth, violence
-- cosmos: stars, space, infinity, wonder, night
-- desert: sand, emptiness, heat, loneliness, silence
-- field: grass, open plains, freedom, simplicity
-- cave: darkness, enclosure, depth, underground, secrets
-- storm: chaos, wind, lightning, turbulence, conflict
-
-PARTICLES are KEY — use them generously to add atmosphere:
-- Mist/fog: particleMotion=drift, size=0.03, count=3000, soft colors
-- Rain: particleMotion=rain, size=0.02, count=4000
-- Snow/petals: particleMotion=float, size=0.06, count=2000
-- Embers: particleMotion=rise, size=0.04, count=1500, orange/red
-- Dust: particleMotion=scatter, size=0.02, count=2500
-- Spirits/souls: particleMotion=orbit, size=0.08, count=800, white/blue
-- Stars falling: particleMotion=rain, size=0.03, count=1000, silver
-- Rising light: particleMotion=rise, size=0.05, count=2000
-- Spinning/vortex: particleMotion=spiral, count=3000
-
-CRITICAL RULES:
-- Make each line DISTINCT from the others — vary sceneType aggressively
-- If a line is abstract/psychological, use void or cosmos with heavy particles
-- If a line has strong physical imagery, be LITERAL about it
-- Colors must match the emotional/visual quality exactly
-- turbulence > 0.5 only for violent, chaotic, or stormy lines
-- timeOfDay: be precise — if the line says "night", use 0 or 1
-- cameraAngle: low for awe/grandeur, high for loneliness, closeup for intimacy, wide for vast spaces
+PARTICLES are crucial — use them generously:
+- mist/fog: drift, tiny, 0.02-0.04 size, pastel or cool hue
+- rain: rain motion, silver/blue, small
+- embers/sparks: rise, orange/gold, 0.03-0.06 size
+- petals/leaves: float, warm pink/amber, 0.06-0.12 size
+- stars falling: rain, silver-white, 0.02-0.04
+- spirits/souls: orbit, luminous white/blue, 0.06-0.1
+- cosmic dust: spiral, violet/teal, 0.02-0.05
+- fireflies: float, warm yellow-green, 0.06-0.1
 
 Output ONLY valid JSON, no markdown, no explanation.`;
 
@@ -67,49 +62,46 @@ router.post("/compose-scene", async (req, res) => {
 
   const prevLines =
     context && context.length > 0
-      ? `\nPrevious lines (for context, but focus on the CURRENT line):\n${context
-          .slice(-3)
-          .map((l, i) => `  ${i + 1}. "${l}"`)
-          .join("\n")}\n`
+      ? `\nPrevious lines (context only):\n${context.slice(-3).map((l, i) => `  ${i + 1}. "${l}"`).join("\n")}\n`
       : "";
 
   const userPrompt = `${prevLines}
-Current line to visualize: "${line}"
+Current line: "${line}"
 
-Analyze this line deeply and compose a unique 3D scene. Output ONLY JSON matching this exact schema:
+Analyze deeply. Output ONLY JSON:
 {
   "sceneType": "forest"|"ocean"|"mountain"|"city"|"ruins"|"fire"|"cosmos"|"desert"|"field"|"cave"|"storm"|"void",
-  "skyColor": "#hex",
-  "fogColor": "#hex",
+  "skyColor": "#hex — rich, dramatic, NOT plain black",
+  "fogColor": "#hex — colored atmosphere",
   "fogDensity": 0.001-0.08,
-  "groundColor": "#hex",
-  "ambientColor": "#hex",
-  "lightColor": "#hex",
-  "lightIntensity": 0-4,
+  "groundColor": "#hex — vivid, characterful",
+  "ambientColor": "#hex — warm or cool fill",
+  "lightColor": "#hex — main light color, vivid",
+  "lightIntensity": 0.5-4,
   "turbulence": 0-1,
   "timeOfDay": 0-1,
   "terrain": 0-1,
   "terrainHeight": 0.5-12,
   "terrainScale": 0.3-5,
   "water": 0-1,
-  "waterColor": "#hex",
+  "waterColor": "#hex — vivid blue/teal/cyan",
   "waterOpacity": 0.1-1,
   "trees": 0-1,
-  "treeColor": "#hex",
+  "treeColor": "#hex — rich green/jade/gold",
   "buildings": 0-1,
   "columns": 0-1,
   "fire": 0-1,
   "particles": 0-1,
-  "particleColor": "#hex",
+  "particleColor": "#hex — luminous, vibrant",
   "particleSize": 0.01-0.8,
-  "particleCount": 100-8000,
+  "particleCount": 500-8000,
   "particleMotion": "still"|"float"|"rain"|"rise"|"spiral"|"orbit"|"scatter"|"drift"|"pulse",
   "particleSpread": 5-60,
   "spheres": 0-1,
-  "sphereColor": "#hex",
+  "sphereColor": "#hex — glowing vivid",
   "stars": 0-1,
   "rings": 0-1,
-  "ringColor": "#hex",
+  "ringColor": "#hex — electric, luminous",
   "cameraAngle": "horizon"|"high"|"low"|"closeup"|"wide"
 }`;
 
