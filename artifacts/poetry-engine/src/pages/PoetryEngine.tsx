@@ -349,11 +349,11 @@ function InputView({
             <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
             <span style={{
               fontFamily: "Inter, sans-serif", fontSize: 9.5,
-              letterSpacing: "0.22em", textTransform: "uppercase",
-              color: "rgba(255,60,60,0.7)",
+              letterSpacing: "0.18em", textTransform: "uppercase",
+              color: "rgba(255,80,80,0.85)",
               whiteSpace: "nowrap",
             }}>
-              Harvard Advocate · Fear Issue
+              Visualize the Harvard Advocate Fear Issue
             </span>
             <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
           </div>
@@ -414,31 +414,33 @@ function InputView({
             })}
           </div>
 
-          {/* "Visualize your own poems!" — full width, below */}
+          {/* "Visualize your own poems" — full width, below */}
           <button
             onClick={onEnterOwn}
             style={{
               marginTop: 6,
               width: "100%",
-              padding: "11px 16px",
+              padding: "13px 16px",
               borderRadius: 12,
-              border: `1px solid ${isCustom ? "rgba(160,140,255,0.55)" : "rgba(255,255,255,0.1)"}`,
+              border: `1px solid ${isCustom ? "rgba(160,140,255,0.7)" : "rgba(255,255,255,0.22)"}`,
               background: isCustom
-                ? "rgba(110,90,255,0.18)"
-                : "rgba(4,5,15,0.5)",
-              backdropFilter: "blur(12px)",
-              color: isCustom ? "rgba(200,190,255,0.95)" : "rgba(255,255,255,0.4)",
+                ? "rgba(110,90,255,0.22)"
+                : "rgba(255,255,255,0.06)",
+              backdropFilter: "blur(14px)",
+              color: isCustom ? "rgba(220,210,255,0.98)" : "rgba(255,255,255,0.78)",
               fontFamily: "Inter, sans-serif",
-              fontSize: 12.5, fontWeight: 500,
-              letterSpacing: "0.05em",
+              fontSize: 13, fontWeight: 600,
+              letterSpacing: "0.06em",
               cursor: "pointer",
               transition: "all 0.18s ease",
-              boxShadow: isCustom ? "0 0 20px rgba(130,110,255,0.2)" : "none",
+              boxShadow: isCustom
+                ? "0 0 24px rgba(130,110,255,0.28), inset 0 1px 0 rgba(255,255,255,0.08)"
+                : "0 0 12px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.06)",
               display: "flex", alignItems: "center", justifyContent: "center",
               gap: 8,
             }}
           >
-            <span style={{ fontSize: 14, opacity: 0.7 }}>✎</span>
+            <span style={{ fontSize: 15, opacity: 0.85 }}>✎</span>
             Visualize your own poems
           </button>
         </div>

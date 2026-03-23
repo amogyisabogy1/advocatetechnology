@@ -257,7 +257,7 @@ function Spheres({ params }: { params: SceneParams }) {
           <group key={i} position={[s.x, s.y, s.z]}>
             <mesh>
               <sphereGeometry args={[s.r, 20, 16]} />
-              <meshStandardMaterial color={col} emissive={col} emissiveIntensity={1.4} roughness={0.05} metalness={0.95} transparent opacity={0.92} />
+              <meshStandardMaterial color={col} emissive={col} emissiveIntensity={2.8} roughness={0.05} metalness={0.95} transparent opacity={0.95} />
             </mesh>
             <pointLight color={col} intensity={2.5} distance={s.r * 9} decay={2} />
           </group>
@@ -296,7 +296,7 @@ function Rings({ params }: { params: SceneParams }) {
         return (
           <mesh key={i} position={[ring.x, ring.y, ring.z]}>
             <torusGeometry args={[ring.r, 0.07, 10, 80]} />
-            <meshStandardMaterial color={col} emissive={col} emissiveIntensity={3} transparent opacity={0.85} />
+            <meshStandardMaterial color={col} emissive={col} emissiveIntensity={5} transparent opacity={0.9} />
           </mesh>
         );
       })}
@@ -506,7 +506,7 @@ function ParticleSystem({ params }: { params: SceneParams }) {
       <bufferGeometry ref={geoRef}>
         <bufferAttribute attach="attributes-position" array={posRef.current} count={count} itemSize={3} />
       </bufferGeometry>
-      <pointsMaterial color={pColor} size={pSize} sizeAttenuation transparent opacity={0.9} depthWrite={false} />
+      <pointsMaterial color={pColor} size={pSize} sizeAttenuation transparent opacity={0.95} depthWrite={false} />
     </points>
   );
 }
@@ -540,12 +540,13 @@ function PostFX({ params, customScene }: { params: SceneParams; customScene?: st
   const hasGashes = customScene === "gashes";
   const hasVortex = customScene === "vortex";
   const hasFish = customScene === "fish";
-  const bloomStrength = hasEye ? 1.8 : hasCandle ? 2.2 : hasGashes ? 1.4 : hasVortex ? 1.6 : hasFish ? 1.0 : hasFire ? 1.5 : hasRings || hasSpheres ? 1.2 : 0.7;
+  const bloomStrength = hasEye ? 2.4 : hasCandle ? 3.0 : hasGashes ? 2.0 : hasVortex ? 2.2 : hasFish ? 1.6 : hasFire ? 2.2 : hasRings || hasSpheres ? 1.8 : 1.4;
+  const useAberration = hasFire || hasEye || hasCandle || hasVortex || hasGashes;
   return (
     <EffectComposer>
-      <Bloom intensity={bloomStrength} luminanceThreshold={0.18} luminanceSmoothing={0.9} mipmapBlur />
-      {(hasFire || hasEye) && (
-        <ChromaticAberration blendFunction={BlendFunction.NORMAL} offset={[0.001, 0.001]} radialModulation={false} modulationOffset={0} />
+      <Bloom intensity={bloomStrength} luminanceThreshold={0.1} luminanceSmoothing={0.85} mipmapBlur />
+      {useAberration && (
+        <ChromaticAberration blendFunction={BlendFunction.NORMAL} offset={[0.0015, 0.0015]} radialModulation={false} modulationOffset={0} />
       )}
     </EffectComposer>
   );
@@ -618,7 +619,7 @@ export function CuratedSceneCanvas({ params, isTransitioning, customScene }: Cur
       <Canvas
         camera={{ position: [0, 5, 20], fov: 62, near: 0.1, far: 250 }}
         shadows="soft"
-        gl={{ antialias: true, alpha: false, powerPreference: "high-performance", toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.4 }}
+        gl={{ antialias: true, alpha: false, powerPreference: "high-performance", toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.9 }}
         style={{ background: params.skyColor || "#03050f" }}
         onCreated={({ gl }) => { gl.shadowMap.type = THREE.PCFShadowMap; }}
       >
