@@ -1,6 +1,6 @@
 # Poetry Visualization Engine
 
-A full-screen immersive web app where each poetry line generates a unique 3D world in real-time using Claude AI.
+A full-screen immersive web app where each poetry line generates a unique 3D world in real-time using Claude AI. Includes a curated gallery of 4 poems with hand-crafted hyper-specific 3D scenes, plus a freeform visualizer for any poem.
 
 ## Architecture
 
@@ -11,42 +11,48 @@ A full-screen immersive web app where each poetry line generates a unique 3D wor
 - `lib/api-client-react` — Generated React Query hooks + TypeScript types
 - `lib/api-zod` — Generated Zod schemas
 
-### Key Features
-- **Browse Mode**: Select from 6 preset poems (Frost, Neruda, Rumi, Dickinson, Rilke, Blake). Lines auto-advance every 7 seconds.
-- **Live Editor Mode**: Type any poetry line, press Enter — Claude AI generates a unique 3D scene.
-- **3D Engine**: React Three Fiber with terrain, water, trees, buildings, columns, fire, floating spheres, and starfield.
-- **AI Backend**: POST `/api/compose-scene` → Claude `claude-sonnet-4-6` → SceneParams JSON.
-- **Cinematic UI**: Dark mode, frosted glass overlays, literary Georgia serif typography, gradient gold text.
+## Pages & Routing (wouter)
 
-### API Endpoints
-- `GET /api/healthz` — Health check
-- `POST /api/compose-scene` — Body: `{ line: string, context?: string[] }` → Returns `SceneParams`
+| Route | Component | Description |
+|-------|-----------|-------------|
+| `/` | `Home` | Landing page — 4 curated poem cards with animated starfield |
+| `/poem/:id` | `CuratedPoem` | Hard-coded hyper-specific 3D scenes per poem |
+| `/visualize` | `PoetryEngine` | Freeform: paste any poem → AI generates scenes |
 
-### SceneParams Fields
-terrain, terrainHeight, terrainScale, water, waterAmplitude, waterFrequency, trees, buildings, columns, columnHeight, columnRadius, fire, fireRadius, fireHeight, spheres, sphereRadius, sphereY, stars, turbulence, col1, col2, col3, skyColor, fogColor, fogDensity, timeOfDay
+## Curated Poems
 
-### AI Integration
-Uses Replit AI Integrations for Anthropic — no user API key needed.
-- `AI_INTEGRATIONS_ANTHROPIC_BASE_URL` and `AI_INTEGRATIONS_ANTHROPIC_API_KEY` set via Replit integrations.
-- Model: `claude-sonnet-4-6`
+1. **William Blake — "The Tyger"** (1794) — Fire + actual 3D tiger rendered from primitives (Tiger.tsx), glowing amber eyes, breathing animation, 5000 rising ember particles
+2. **Robert Frost — "The Road Not Taken"** (1916) — Golden autumn forest, falling leaf particles, amber sky shifting to dark undergrowth
+3. **Pablo Neruda — "Tonight I Can Write"** (1924) — Deep cosmos, blue drift particles, purple spiraling rings, rose orbiting spheres for the love verse
+4. **Walt Whitman — "O Captain! My Captain!"** (1865) — Ocean with animated ship silhouette, red rain particles for grief, celebration city for triumph
 
-### Frontend Components
-- `src/pages/PoetryEngine.tsx` — Main page with mode switching, state management
-- `src/components/three/SceneCanvas.tsx` — Three.js canvas with all 3D scene objects
-- `src/components/ui-poetry/PoetryOverlay.tsx` — Poem text + live input overlay
-- `src/components/ui-poetry/PoemBrowser.tsx` — Modal for selecting preset poems
-- `src/lib/presets.ts` — 6 preset poems
-- `src/lib/defaultScene.ts` — Default scene parameters
+## 3D Engine
 
-### Design
-- Always dark — cinematic experience, never light mode
-- Color: near-black blue-grey background, gold/amber primary, violet accent
-- Typography: Georgia serif for poem text, Inter sans for UI
-- Frosted glass panels via `.glass` and `.glass-lighter` CSS classes
+### SceneCanvas.tsx (generic, used by PoetryEngine)
+- React Three Fiber with bloom post-processing (EffectComposer + Bloom)
+- 12 scene types: void, ocean, forest, mountain, city, ruins, fire, cosmos, desert, field, cave, storm
+- 9 particle motion modes: float, rain, rise, spiral, orbit, scatter, drift, pulse, still
+- Elements: terrain, water, forest, buildings, ruins, fire, spheres, rings, aurora, stars
+- ACES filmic tone mapping, PCFShadowMap
 
-## Development
-```bash
-pnpm --filter @workspace/api-spec run codegen  # Regenerate API types
-```
+### CuratedSceneCanvas.tsx (extended, used by CuratedPoem)
+- Identical to SceneCanvas but accepts `customScene` prop
+- Custom scenes: `"tiger"` (Tiger.tsx), `"eye"` (giant glowing eye for Blake's "immortal hand or eye"), `"captain"` (ship for Whitman)
 
-Workflows auto-start via Replit. Both workflows must be running for full functionality.
+### Tiger.tsx
+- Stylized 3D tiger from Three.js primitives only (no model files)
+- Body, head, ears, legs, tail, stripes, glowing amber eyes (point lights), ground shadow
+- Breathing animation, tail sway, slow head movement
+
+## AI Backend
+
+- `POST /api/compose-scene` → Claude `claude-sonnet-4-6`
+- System prompt instructs rich saturated colors — no muddy palettes
+- Returns `SceneParams`: full scene description including sky/fog/ground/light colors, all element intensities, particle settings, camera angle
+
+## Design System
+- Dark cinematic — deep blue-grey (#04050f base), never light mode
+- Georgia serif for poem text, Inter sans for UI
+- Amber/gold (#d4a017) primary accent
+- Bloom makes all emissive elements glow cinematically
+- Frosted glass via `backdrop-filter: blur` on overlays

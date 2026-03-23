@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { Link } from "wouter";
 import { useComposeScene } from "@workspace/api-client-react";
 import type { SceneParams } from "@workspace/api-client-react";
 import { SceneCanvas } from "@/components/three/SceneCanvas";
@@ -154,6 +155,9 @@ function InputView({ poemText, onPoemTextChange, onVisualize }: InputViewProps) 
             Poetry Visualization Engine
           </span>
         </div>
+        <Link href="/" className="text-xs text-foreground/35 hover:text-foreground/60 transition-colors font-sans tracking-wider" style={{ textDecoration: "none" }}>
+          ← All poems
+        </Link>
       </div>
 
       {/* Main content */}
