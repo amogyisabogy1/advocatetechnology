@@ -6,6 +6,10 @@ import { BlendFunction } from "postprocessing";
 import * as THREE from "three";
 import type { SceneParams } from "@workspace/api-client-react";
 import { Tiger } from "./Tiger";
+import { Fish } from "./Fish";
+import { Candle } from "./Candle";
+import { Gashes } from "./Gashes";
+import { Vortex } from "./Vortex";
 
 function hex(h: string) {
   try { return new THREE.Color(h); } catch { return new THREE.Color("#ffffff"); }
@@ -532,7 +536,11 @@ function PostFX({ params, customScene }: { params: SceneParams; customScene?: st
   const hasRings = (params.rings ?? 0) > 0.2;
   const hasSpheres = (params.spheres ?? 0) > 0.2;
   const hasEye = customScene === "eye";
-  const bloomStrength = hasEye ? 1.8 : hasFire ? 1.5 : hasRings || hasSpheres ? 1.2 : 0.7;
+  const hasCandle = customScene === "candle";
+  const hasGashes = customScene === "gashes";
+  const hasVortex = customScene === "vortex";
+  const hasFish = customScene === "fish";
+  const bloomStrength = hasEye ? 1.8 : hasCandle ? 2.2 : hasGashes ? 1.4 : hasVortex ? 1.6 : hasFish ? 1.0 : hasFire ? 1.5 : hasRings || hasSpheres ? 1.2 : 0.7;
   return (
     <EffectComposer>
       <Bloom intensity={bloomStrength} luminanceThreshold={0.18} luminanceSmoothing={0.9} mipmapBlur />
@@ -563,6 +571,10 @@ function SceneContent({ params, customScene }: { params: SceneParams; customScen
       {customScene === "tiger" && <Tiger position={[0, 0, -2]} scale={1.4} />}
       {customScene === "eye" && <GiantEye params={params} />}
       {customScene === "captain" && <CaptainShip params={params} />}
+      {customScene === "fish" && <Fish position={[0, 4, -5]} scale={2.0} />}
+      {customScene === "candle" && <Candle position={[0, -1.5, -2]} scale={1.8} />}
+      {customScene === "gashes" && <Gashes count={6} />}
+      {customScene === "vortex" && <Vortex position={[0, 3, -10]} />}
       <ParticleSystem params={params} />
       {(params.stars ?? 0) > 0.2 && (
         <Stars radius={90} depth={60} count={Math.floor(params.stars * 7000)} factor={5} saturation={0.8} fade speed={(params.turbulence ?? 0) * 0.5 + 0.08} />
