@@ -10,6 +10,7 @@ import { Fish } from "./Fish";
 import { Candle } from "./Candle";
 import { Gashes } from "./Gashes";
 import { Vortex } from "./Vortex";
+import { Razorknife } from "./Razorknife";
 
 function hex(h: string) {
   try { return new THREE.Color(h); } catch { return new THREE.Color("#ffffff"); }
@@ -506,7 +507,7 @@ function ParticleSystem({ params }: { params: SceneParams }) {
       <bufferGeometry ref={geoRef}>
         <bufferAttribute attach="attributes-position" array={posRef.current} count={count} itemSize={3} />
       </bufferGeometry>
-      <pointsMaterial color={pColor} size={pSize} sizeAttenuation transparent opacity={0.95} depthWrite={false} />
+      <pointsMaterial color={pColor} size={pSize} sizeAttenuation transparent opacity={0.95} depthWrite={false} blending={THREE.AdditiveBlending} />
     </points>
   );
 }
@@ -522,9 +523,11 @@ function Lighting({ params }: { params: SceneParams }) {
   const sunX = Math.cos(tod * Math.PI * 2) * 40;
   return (
     <>
-      <ambientLight intensity={0.2 + tod * 0.2} color={ambCol} />
+      <ambientLight intensity={0.55 + tod * 0.25} color={ambCol} />
       <directionalLight position={[sunX, sunY, 20]} intensity={intensity} color={lightCol} castShadow shadow-mapSize={[512, 512]} />
-      <directionalLight position={[-sunX * 0.5, sunY * 0.3, -15]} intensity={intensity * 0.3} color={lightCol} />
+      <directionalLight position={[-sunX * 0.5, sunY * 0.3, -15]} intensity={intensity * 0.45} color={lightCol} />
+      {/* Vibrant fill from below — always-on colored bounce light */}
+      <pointLight position={[0, -4, 8]} color={lightCol} intensity={intensity * 0.6} distance={60} decay={1.2} />
     </>
   );
 }
@@ -540,8 +543,9 @@ function PostFX({ params, customScene }: { params: SceneParams; customScene?: st
   const hasGashes = customScene === "gashes";
   const hasVortex = customScene === "vortex";
   const hasFish = customScene === "fish";
-  const bloomStrength = hasEye ? 2.4 : hasCandle ? 3.0 : hasGashes ? 2.0 : hasVortex ? 2.2 : hasFish ? 1.6 : hasFire ? 2.2 : hasRings || hasSpheres ? 1.8 : 1.4;
-  const useAberration = hasFire || hasEye || hasCandle || hasVortex || hasGashes;
+  const hasKnife = customScene === "razorknife";
+  const bloomStrength = hasEye ? 2.4 : hasCandle ? 3.0 : hasGashes ? 2.0 : hasVortex ? 2.4 : hasFish ? 1.6 : hasKnife ? 2.0 : hasFire ? 2.2 : hasRings || hasSpheres ? 2.0 : 1.6;
+  const useAberration = hasFire || hasEye || hasCandle || hasVortex || hasGashes || hasKnife;
   return (
     <EffectComposer>
       <Bloom intensity={bloomStrength} luminanceThreshold={0.1} luminanceSmoothing={0.85} mipmapBlur />
@@ -576,6 +580,7 @@ function SceneContent({ params, customScene }: { params: SceneParams; customScen
       {customScene === "candle" && <Candle position={[0, -1.5, -2]} scale={1.8} />}
       {customScene === "gashes" && <Gashes count={6} />}
       {customScene === "vortex" && <Vortex position={[0, 3, -10]} />}
+      {customScene === "razorknife" && <Razorknife position={[0, 3, -4]} scale={1.3} />}
       <ParticleSystem params={params} />
       {(params.stars ?? 0) > 0.2 && (
         <Stars radius={90} depth={60} count={Math.floor(params.stars * 7000)} factor={5} saturation={0.8} fade speed={(params.turbulence ?? 0) * 0.5 + 0.08} />
@@ -619,7 +624,7 @@ export function CuratedSceneCanvas({ params, isTransitioning, customScene }: Cur
       <Canvas
         camera={{ position: [0, 5, 20], fov: 62, near: 0.1, far: 250 }}
         shadows="soft"
-        gl={{ antialias: true, alpha: false, powerPreference: "high-performance", toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.9 }}
+        gl={{ antialias: true, alpha: false, powerPreference: "high-performance", toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 2.2 }}
         style={{ background: params.skyColor || "#03050f" }}
         onCreated={({ gl }) => { gl.shadowMap.type = THREE.PCFShadowMap; }}
       >
